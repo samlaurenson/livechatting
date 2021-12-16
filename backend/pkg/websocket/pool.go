@@ -14,6 +14,11 @@ type Pool struct {
 	ButtonCount int
 }
 
+type UserList struct {
+	IDList []int `json:"IDlist"`
+	Type   int   `json:"type"`
+}
+
 func NewPool() *Pool {
 	return &Pool{
 		Register:    make(chan *Client),
@@ -29,24 +34,29 @@ func (pool *Pool) Start() {
 	for {
 		select {
 		case client := <-pool.Register:
-			var joinID = client.ID
+			var clientList []int
+			joinID := client.ID
 			pool.Clients[client] = true
 			if err := client.Conn.WriteJSON(Message{Type: 2, Body: strconv.Itoa(pool.ButtonCount)}); err != nil {
 				fmt.Println(err)
-				return
 			}
 			fmt.Println("Size of connection pool: ", len(pool.Clients))
 			for client, _ := range pool.Clients {
+				clientList = append(clientList, client.ID)
 				fmt.Println(client)
-				client.Conn.WriteJSON(Message{Sender: joinID, Type: 0, Body: "New user joined... "})
+				client.Conn.WriteJSON(Message{Sender: joinID, Type: 3, Body: "New user joined... "})
+			}
+
+			for client, _ := range pool.Clients {
+				client.Conn.WriteJSON(UserList{IDList: clientList, Type: 5})
 			}
 			break
 		case client := <-pool.Unregister:
-			var leavingID = client.ID
+			leavingID := client.ID
 			delete(pool.Clients, client)
 			fmt.Println("Size of connection pool: ", len(pool.Clients))
 			for client, _ := range pool.Clients {
-				client.Conn.WriteJSON(Message{Sender: leavingID, Type: 1, Body: "User disconnected"})
+				client.Conn.WriteJSON(Message{Sender: leavingID, Type: 4, Body: "User disconnected"})
 			}
 			break
 		case message := <-pool.Broadcast: //The <- operator represents the idea of passing a value from a channel to a reference

@@ -6,36 +6,59 @@ import Header from "./Header.jsx";
 import ChatHistory from './ChatHistory';
 import MessageBox from './MessageBox';
 import LiveButton from './LiveButton';
+import UserList from './UserList';
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
       chatHistory: [],
-      buttonCount: 0
+      buttonCount: 0,
+      activeUsers: []
     }
   }
 
   componentDidMount() {
     connect((msg) => {
       console.log("new message");
+
+      //Adding users to user list when connection established
+      if(JSON.parse(msg.data).type === 5) { 
+        this.setState((prevState) => ({
+          activeUsers: JSON.parse(msg.data).IDlist
+        }));
+        console.log(this.state.activeUsers);
+        return;
+      }
+
+      //Removing user from user list when user disconnects
+      if(JSON.parse(msg.data).type === 4) {
+        this.setState((prevState) => ({
+          activeUsers: this.state.activeUsers.filter(function(person) {
+            return person !== JSON.parse(msg.data).sender;
+          })
+        }));
+        console.log(this.state.activeUsers);
+      }
+
+      //Updating the live button counter when get notified of a button update
       if(JSON.parse(msg.data).type === 2) {
         this.setState((prevState) => ({
           buttonCount: parseInt(JSON.parse(msg.data).body)
         }));
-      } else {
-        this.setState(prevState => ({
-          chatHistory: [...this.state.chatHistory, msg]
-        }));
-        console.log(this.state);
+        return;
       }
+
+      //Adding message to chat history
+      this.setState(prevState => ({
+        chatHistory: [...this.state.chatHistory, msg]
+      }));
+      console.log(this.state);
       
     });
   }
 
   send(e) {
-    // console.log("Sent: Hi :)");
-    // sendMessage("Hi :)");
     if(e.keyCode === 13) { //if key pressed was enter key
       sendMessage(e.target.value);
       e.target.value = "";
@@ -51,32 +74,12 @@ class App extends Component {
       <div className="App">
         <Header />
         <LiveButton click={this.click} count={this.state.buttonCount}/>
+        <UserList users={this.state.activeUsers}/>
         <ChatHistory chatHistory={this.state.chatHistory} />
         <MessageBox send={this.send} />
       </div>
     );
   }
 }
-
-// function App() {
-//   return (
-//     <div className="App">
-//       <header className="App-header">
-//         <img src={logo} className="App-logo" alt="logo" />
-//         <p>
-//           Edit <code>src/App.js</code> and save to reload.
-//         </p>
-//         <a
-//           className="App-link"
-//           href="https://reactjs.org"
-//           target="_blank"
-//           rel="noopener noreferrer"
-//         >
-//           Learn React
-//         </a>
-//       </header>
-//     </div>
-//   );
-// }
 
 export default App;
