@@ -1,8 +1,10 @@
 .userList {
-    float: right;
+    //float: right;
+    right: 1%;
+    position: absolute;
     width: 15%;
-    display: block;
+    display: inline-block;
     margin: auto;
     height: auto;
-    background-color: aquamarine;
+    outline: black solid 1px;
 }
