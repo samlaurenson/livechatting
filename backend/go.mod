@@ -1,4 +1,4 @@
-module github.com/samlaurenson/Livechat
+module github.com/samlaurenson/livechatting
 
 go 1.17
 
