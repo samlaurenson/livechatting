@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -15,7 +16,7 @@ type Client struct {
 
 type Message struct {
 	Sender int    `json:"sender"`
-	Type   int    `json:"type"`
+	Type   string `json:"type"`
 	Body   string `json:"body"`
 }
 
@@ -27,17 +28,19 @@ func (c *Client) Read() {
 
 	for {
 		//messageType, p, err := c.Conn.ReadMessage()
-		messageType, p, err := c.Conn.ReadMessage()
+		_, p, err := c.Conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		if string(p) == "btnpress" {
-			c.Pool.Update <- string(p)
+		var msgJson Message
+		json.Unmarshal([]byte(string(p)), &msgJson)
+
+		if msgJson.Type == "ButtonEvent" {
+			c.Pool.Update <- msgJson.Body
 		} else {
-			//var i = c.D
-			message := Message{Sender: c.ID, Type: messageType, Body: string(p)}
+			message := Message{Sender: c.ID, Type: msgJson.Type, Body: msgJson.Body}
 			c.Pool.Broadcast <- message
 			fmt.Printf("Message Receive: %+v\n", message)
 		}

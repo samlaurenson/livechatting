@@ -15,8 +15,8 @@ type Pool struct {
 }
 
 type UserList struct {
-	IDList []int `json:"IDlist"`
-	Type   int   `json:"type"`
+	IDList []int  `json:"IDlist"`
+	Type   string `json:"type"`
 }
 
 func NewPool() *Pool {
@@ -37,18 +37,18 @@ func (pool *Pool) Start() {
 			var clientList []int
 			joinID := client.ID
 			pool.Clients[client] = true
-			if err := client.Conn.WriteJSON(Message{Type: 2, Body: strconv.Itoa(pool.ButtonCount)}); err != nil {
+			if err := client.Conn.WriteJSON(Message{Type: "ButtonEvent", Body: strconv.Itoa(pool.ButtonCount)}); err != nil {
 				fmt.Println(err)
 			}
 			fmt.Println("Size of connection pool: ", len(pool.Clients))
 			for client, _ := range pool.Clients {
 				clientList = append(clientList, client.ID)
 				fmt.Println(client)
-				client.Conn.WriteJSON(Message{Sender: joinID, Type: 3, Body: "New user joined... "})
+				client.Conn.WriteJSON(Message{Sender: joinID, Type: "UserJoin", Body: "New user joined... "})
 			}
 
 			for client, _ := range pool.Clients {
-				client.Conn.WriteJSON(UserList{IDList: clientList, Type: 5})
+				client.Conn.WriteJSON(UserList{IDList: clientList, Type: "UserListUpdate"})
 			}
 			break
 		case client := <-pool.Unregister:
@@ -56,7 +56,7 @@ func (pool *Pool) Start() {
 			delete(pool.Clients, client)
 			fmt.Println("Size of connection pool: ", len(pool.Clients))
 			for client, _ := range pool.Clients {
-				client.Conn.WriteJSON(Message{Sender: leavingID, Type: 4, Body: "User disconnected"})
+				client.Conn.WriteJSON(Message{Sender: leavingID, Type: "UserLeave", Body: "User disconnected"})
 			}
 			break
 		case message := <-pool.Broadcast: //The <- operator represents the idea of passing a value from a channel to a reference
@@ -71,7 +71,7 @@ func (pool *Pool) Start() {
 			fmt.Println("Button Updating")
 			pool.ButtonCount++
 			for client, _ := range pool.Clients {
-				if err := client.Conn.WriteJSON(Message{Type: 2, Body: strconv.Itoa(pool.ButtonCount)}); err != nil {
+				if err := client.Conn.WriteJSON(Message{Type: "ButtonEvent", Body: strconv.Itoa(pool.ButtonCount)}); err != nil {
 					fmt.Println(err)
 					return
 				}

@@ -23,7 +23,7 @@ class App extends Component {
       console.log("new message");
 
       //Adding users to user list when connection established
-      if(JSON.parse(msg.data).type === 5) { 
+      if(JSON.parse(msg.data).type === "UserListUpdate") { 
         this.setState((prevState) => ({
           activeUsers: JSON.parse(msg.data).IDlist
         }));
@@ -32,7 +32,7 @@ class App extends Component {
       }
 
       //Removing user from user list when user disconnects
-      if(JSON.parse(msg.data).type === 4) {
+      if(JSON.parse(msg.data).type === "UserLeave") {
         this.setState((prevState) => ({
           activeUsers: this.state.activeUsers.filter(function(person) {
             return person !== JSON.parse(msg.data).sender;
@@ -42,7 +42,7 @@ class App extends Component {
       }
 
       //Updating the live button counter when get notified of a button update
-      if(JSON.parse(msg.data).type === 2) {
+      if(JSON.parse(msg.data).type === "ButtonEvent") {
         this.setState((prevState) => ({
           buttonCount: parseInt(JSON.parse(msg.data).body)
         }));
@@ -60,13 +60,13 @@ class App extends Component {
 
   send(e) {
     if(e.keyCode === 13) { //if key pressed was enter key
-      sendMessage(e.target.value);
+      sendMessage('{"Type":"MessageEvent", "Body":"' + e.target.value + '"}')
       e.target.value = "";
     }
   }
 
   click(e) {
-    sendMessage("btnpress");
+    sendMessage('{"Type":"ButtonEvent", "Body":""}')
   }
 
   render() {
